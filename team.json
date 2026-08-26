@@ -1,0 +1,27 @@
+{
+  "name": "AI Developer Team V3",
+  "roles": [
+    "CTO",
+    "Product Manager",
+    "Architect",
+    "Frontend Engineer",
+    "Backend Engineer",
+    "Database Engineer",
+    "AI/LLM Engineer",
+    "QA Engineer",
+    "Security Engineer",
+    "DevOps/SRE",
+    "Code Reviewer",
+    "Release Manager"
+  ],
+  "default_mode": "DISCOVER",
+  "write_policy": "feature_branch_only",
+  "human_approval_required": [
+    "production_deploy",
+    "destructive_migration",
+    "production_data_delete",
+    "auth_core_change",
+    "payment_core_change",
+    "privacy_sensitive_change"
+  ]
+}
