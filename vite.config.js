@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from 'vite';
 import { fetchMassiveDailyBars } from './server/massive.js';
+import { apiErrorStatus, assertPublicBarSymbol } from './server/policy.js';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -15,14 +16,15 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use('/api/bars', async (req, res) => {
             try {
               const requestUrl = new URL(req.url || '/', 'http://localhost');
-              const symbol = requestUrl.searchParams.get('symbol');
+              const symbol = assertPublicBarSymbol(requestUrl.searchParams.get('symbol'));
               const tradingDays = requestUrl.searchParams.get('days');
               const result = await fetchMassiveDailyBars({ symbol, tradingDays });
               res.statusCode = 200;
               res.setHeader('Content-Type', 'application/json; charset=utf-8');
+              res.setHeader('Cache-Control', 'no-store');
               res.end(JSON.stringify(result));
             } catch (error) {
-              res.statusCode = String(error?.message || '').includes('not configured') ? 503 : 400;
+              res.statusCode = apiErrorStatus(error);
               res.setHeader('Content-Type', 'application/json; charset=utf-8');
               res.end(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
             }
