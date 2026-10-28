@@ -6,7 +6,7 @@ const WEIGHTS = {
 
 export function adjustedScore(stock, mode='balanced') {
   const weights = WEIGHTS[mode] || WEIGHTS.balanced;
-  return Math.round(Object.entries(weights).reduce((sum, [key, weight]) => sum + stock.scores[key] * weight, 0));
+  return Math.round(Object.entries(weights).reduce((sum, [key, weight]) => sum + (stock.scores[key] ?? 0) * weight, 0));
 }
 
 export function portfolioStats(total, qld, ionq) {
@@ -26,16 +26,27 @@ export function portfolioStats(total, qld, ionq) {
   };
 }
 
-export function compareSetup(a, b) {
-  const estimates = {
-    LRCX: { upside: 21, downside: 8 },
-    IONQ: { upside: 27, downside: 19 },
-    PWR: { upside: 18, downside: 12 },
-    VRT: { upside: 18, downside: 14 },
-    FIX: { upside: 16, downside: 10 }
+function setupEstimate(stock) {
+  const price = Number(stock.price);
+  const target = Number(stock.plan?.targets?.[1] ?? stock.plan?.targets?.[0]);
+  const stop = Number(stock.plan?.stop);
+  const upside = Number.isFinite(price) && Number.isFinite(target) && price > 0
+    ? Math.max(0, ((target / price) - 1) * 100)
+    : 0;
+  const downside = Number.isFinite(price) && Number.isFinite(stop) && price > 0
+    ? Math.max(0, ((price - stop) / price) * 100)
+    : 0;
+  const rewardRisk = downside > 0 ? upside / downside : null;
+  return {
+    stock,
+    upside: Math.round(upside * 10) / 10,
+    downside: Math.round(downside * 10) / 10,
+    rewardRisk: rewardRisk == null ? null : Math.round(rewardRisk * 100) / 100
   };
-  const pack = (stock) => ({ stock, ...(estimates[stock.ticker] || { upside: 15, downside: 12 }) });
-  return [pack(a), pack(b)];
+}
+
+export function compareSetup(a, b) {
+  return [setupEstimate(a), setupEstimate(b)];
 }
 
 export function rankStocks(stocks, mode='balanced') {
