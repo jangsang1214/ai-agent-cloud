@@ -1,0 +1,16 @@
+.data-button { background:#11151a; color:#dfe5ec; }
+.data-button.is-live { border-color:#28583f; background:#10251a; color:#8be2af; }
+.data-button.is-live i { background:#67d99a; box-shadow:0 0 16px rgba(103,217,154,.55); }
+.system-message { min-height:18px; margin:-9px 0 12px; color:#75808c; font-size:10px; line-height:1.5; }
+.system-message.error { color:#ff9b9b; }
+.status-yellow { color:#e8c778; border-color:#57491f; background:#211c0c; }
+.metric-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+.metric-grid > div { background:#0c1014; border:1px solid #1d242b; border-radius:10px; padding:10px; min-width:0; }
+.metric-grid span { display:block; color:#697581; font-size:9px; letter-spacing:.08em; }
+.metric-grid strong { display:block; margin-top:6px; font-size:13px; overflow-wrap:anywhere; }
+.compare-metrics { grid-template-columns:repeat(4,1fr); }
+
+@media (max-width: 620px) {
+  .metric-grid { grid-template-columns:repeat(2,1fr); }
+  .compare-metrics { grid-template-columns:repeat(2,1fr); }
+}
