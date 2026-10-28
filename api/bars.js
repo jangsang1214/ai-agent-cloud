@@ -1,4 +1,5 @@
 import { fetchMassiveDailyBars } from '../server/massive.js';
+import { apiErrorStatus, assertPublicBarSymbol } from '../server/policy.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -7,14 +8,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const symbol = req.query?.symbol;
+    const symbol = assertPublicBarSymbol(req.query?.symbol);
     const tradingDays = req.query?.days;
     const result = await fetchMassiveDailyBars({ symbol, tradingDays });
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900');
     return res.status(200).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    const status = message.includes('not configured') ? 503 : 400;
-    return res.status(status).json({ error: message });
+    return res.status(apiErrorStatus(error)).json({ error: message });
   }
 }
