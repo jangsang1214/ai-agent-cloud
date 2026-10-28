@@ -1,4 +1,5 @@
 const API_BASE = 'https://api.massive.com';
+const DEFAULT_TIMEOUT_MS = 8000;
 
 function isoDate(date) {
   return date.toISOString().slice(0, 10);
@@ -23,14 +24,25 @@ function normalizeDate(value) {
   return input;
 }
 
-async function massiveRequest(url, apiKey) {
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${requireKey(apiKey)}` }
-  });
+async function massiveRequest(url, apiKey, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  let response;
+  try {
+    response = await fetch(url, {
+      headers: { Authorization: `Bearer ${requireKey(apiKey)}` },
+      signal: AbortSignal.timeout(timeoutMs)
+    });
+  } catch (error) {
+    const wrapped = new Error(error?.name === 'TimeoutError' ? 'Massive request timed out' : 'Massive request failed');
+    wrapped.statusCode = error?.name === 'TimeoutError' ? 504 : 502;
+    throw wrapped;
+  }
+
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = payload?.error || payload?.message || `Massive request failed (${response.status})`;
-    throw new Error(message);
+    const error = new Error(message);
+    error.statusCode = response.status === 429 ? 429 : 502;
+    throw error;
   }
   return payload;
 }
@@ -64,8 +76,8 @@ export async function fetchMassiveDailyBars({ symbol, tradingDays = 220, apiKey 
   return { symbol: ticker, source: 'massive', bars };
 }
 
-export async function fetchActiveStockUniverse({ maxPages = 20, apiKey = process.env.MASSIVE_API_KEY } = {}) {
-  const pages = Math.max(1, Math.min(30, Number(maxPages) || 20));
+export async function fetchActiveStockUniverse({ maxPages = 3, apiKey = process.env.MASSIVE_API_KEY } = {}) {
+  const pages = Math.max(1, Math.min(5, Number(maxPages) || 3));
   let url = new URL(`${API_BASE}/v3/reference/tickers`);
   url.searchParams.set('market', 'stocks');
   url.searchParams.set('active', 'true');
@@ -76,7 +88,7 @@ export async function fetchActiveStockUniverse({ maxPages = 20, apiKey = process
   const tickers = [];
   let page = 0;
   while (url && page < pages) {
-    const payload = await massiveRequest(url, apiKey);
+    const payload = await massiveRequest(url, apiKey, 6000);
     const results = Array.isArray(payload.results) ? payload.results : [];
     for (const item of results) {
       if (!item?.ticker) continue;
