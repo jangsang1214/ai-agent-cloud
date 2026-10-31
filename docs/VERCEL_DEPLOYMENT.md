@@ -36,6 +36,8 @@ Recommended targets: Preview and Production. Development is optional for `vercel
 5. Confirm `/api/universe` without the batch token is rejected.
 6. Inspect Vercel build/runtime logs for errors before promoting anything to production.
 
-## Current external blocker
+## Deployment status
 
-The connected Vercel integration can read the GitHub repository but currently receives HTTP 403 when attempting to create the Vercel project. This is an account/integration permission issue rather than a repository build issue. Once a Vercel project is created or the integration gains project-create permission, `atlas-rebuild` can be deployed as a Preview without changing `main`.
+A Vercel project has now been created manually and is reachable at `https://atlas-trading-os-liart.vercel.app/`.
+
+This documentation update intentionally triggers a fresh Git-based Preview deployment from `atlas-rebuild` so the branch can be verified end to end without touching `main`.
