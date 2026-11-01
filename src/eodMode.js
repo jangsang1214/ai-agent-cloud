@@ -9,11 +9,13 @@ function patchEodLabels() {
   if (expertSource?.textContent === 'LIVE') expertSource.textContent = 'EOD';
 
   const footer = document.querySelector('#footerSource');
-  if (footer?.textContent?.includes('Massive')) footer.textContent = 'Stooq 무료 일봉 · 기술지표 계산';
+  if (footer?.textContent?.includes('Massive') || footer?.textContent?.includes('Stooq')) {
+    footer.textContent = 'Yahoo Finance 무료 일봉 · 기술지표 계산';
+  }
 
   const system = document.querySelector('#systemMessage');
-  if (system?.textContent?.startsWith('실제 가격·거래량 기반 기술지표입니다.')) {
-    system.textContent = 'Stooq 무료 일봉 가격·거래량 기반 기술지표입니다. 장중 실시간 시세가 아니며, 기업가치·실적 데이터는 아직 중립값으로 처리됩니다.';
+  if (system?.textContent?.startsWith('실제 가격·거래량 기반 기술지표입니다.') || system?.textContent?.includes('Stooq 무료 일봉')) {
+    system.textContent = 'Yahoo Finance 일봉 가격·거래량 기반 기술지표입니다. 장중 실시간 시세가 아니며, 비공식 chart endpoint를 사용합니다. 기업가치·실적 데이터는 아직 중립값으로 처리됩니다.';
   }
 
   const customMessage = document.querySelector('#customStockMessage');
