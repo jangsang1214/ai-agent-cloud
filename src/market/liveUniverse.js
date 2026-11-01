@@ -24,8 +24,8 @@ export async function loadLiveUniverse({ days = 220 } = {}) {
   const sectorSymbols = [...new Set(Object.values(config).map((item) => item.sectorSymbol))];
   const symbols = [...new Set(['SPY', ...sectorSymbols, ...stockSymbols])];
 
-  // Stooq is a free keyless EOD source and can throttle bursts. Load sequentially
-  // so the dashboard stays respectful of the public endpoint and more reliable.
+  // The keyless Yahoo chart endpoint is unofficial and rate-limited, so load
+  // sequentially and rely on the server/CDN cache instead of bursting requests.
   const pairs = [];
   for (const symbol of symbols) {
     pairs.push([symbol, await fetchBars(symbol, days)]);
@@ -42,8 +42,6 @@ export async function loadLiveUniverse({ days = 220 } = {}) {
     stocks: Object.fromEntries(stockSymbols.map((ticker) => [ticker, barsBySymbol[ticker]]))
   };
 
-  // Fundamental/catalyst layers are intentionally neutral until point-in-time
-  // fundamentals, earnings and news adapters are connected.
   const meta = Object.fromEntries(Object.entries(config).map(([ticker, item]) => [ticker, {
     sector: item.sector,
     held: item.held,
@@ -56,7 +54,7 @@ export async function loadLiveUniverse({ days = 220 } = {}) {
 
   return {
     stocks: scanUniverse({ market, meta }),
-    source: 'STOOQ-EOD-TECHNICAL',
-    caveat: 'Free end-of-day price/volume bars from Stooq. Catalyst, Quality and Value remain neutral placeholders (50).'
+    source: 'YAHOO-EOD-TECHNICAL',
+    caveat: 'Keyless Yahoo Finance chart data (unofficial endpoint). Catalyst, Quality and Value remain neutral placeholders (50).'
   };
 }
