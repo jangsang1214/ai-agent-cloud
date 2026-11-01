@@ -1,10 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { apiErrorStatus, assertPublicBarSymbol, requireBatchToken } from '../server/policy.js';
+import { apiErrorStatus, assertPublicBarSymbol, enforceBarRateLimit, requireBatchToken } from '../server/policy.js';
 
-test('public bars only allow dashboard symbols', () => {
+test('public bars accept valid U.S. stock symbols and reject malformed input', () => {
   assert.equal(assertPublicBarSymbol('lrcx'), 'LRCX');
-  assert.throws(() => assertPublicBarSymbol('AAPL'), /not enabled/);
+  assert.equal(assertPublicBarSymbol('AAPL'), 'AAPL');
+  assert.equal(assertPublicBarSymbol('brk.b'), 'BRK.B');
+  assert.throws(() => assertPublicBarSymbol('AAPL<script>'), /Invalid U.S. stock symbol/);
+  assert.throws(() => assertPublicBarSymbol(''), /Invalid U.S. stock symbol/);
+});
+
+test('public bar endpoint limiter rejects bursts', () => {
+  const req = { headers: { 'x-forwarded-for': '203.0.113.11' } };
+  assert.doesNotThrow(() => enforceBarRateLimit(req, { limit: 2, windowMs: 60_000 }));
+  assert.doesNotThrow(() => enforceBarRateLimit(req, { limit: 2, windowMs: 60_000 }));
+  assert.throws(() => enforceBarRateLimit(req, { limit: 2, windowMs: 60_000 }), /Too many stock data requests/);
 });
 
 test('batch endpoints require the configured token', () => {
