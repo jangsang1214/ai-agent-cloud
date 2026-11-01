@@ -1,4 +1,4 @@
-import { fetchStooqDailyBars } from '../server/stooq.js';
+import { fetchYahooDailyBars } from '../server/yahoo.js';
 import { apiErrorStatus, assertPublicBarSymbol, enforceBarRateLimit } from '../server/policy.js';
 
 export default async function handler(req, res) {
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const tradingDays = Number.isFinite(requestedDays)
       ? Math.min(260, Math.max(60, Math.round(requestedDays)))
       : 220;
-    const result = await fetchStooqDailyBars({ symbol, tradingDays });
+    const result = await fetchYahooDailyBars({ symbol, tradingDays });
     res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=3600');
     return res.status(200).json(result);
   } catch (error) {
