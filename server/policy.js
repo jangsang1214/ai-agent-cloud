@@ -3,14 +3,46 @@ const PUBLIC_BAR_SYMBOLS = new Set([
   'LRCX', 'IONQ', 'PWR', 'VRT', 'FIX'
 ]);
 
+const BAR_SYMBOL_PATTERN = /^[A-Z][A-Z0-9.-]{0,9}$/;
+const barRateWindows = new Map();
+
 export function assertPublicBarSymbol(symbol) {
   const value = String(symbol || '').trim().toUpperCase();
-  if (!PUBLIC_BAR_SYMBOLS.has(value)) {
-    const error = new Error('Symbol is not enabled for the public live dashboard');
-    error.statusCode = 403;
+  if (!BAR_SYMBOL_PATTERN.test(value)) {
+    const error = new Error('Invalid U.S. stock symbol');
+    error.statusCode = 400;
     throw error;
   }
   return value;
+}
+
+export function isDefaultDashboardSymbol(symbol) {
+  return PUBLIC_BAR_SYMBOLS.has(String(symbol || '').trim().toUpperCase());
+}
+
+export function enforceBarRateLimit(req, { limit = 36, windowMs = 60_000 } = {}) {
+  const forwarded = String(req.headers?.['x-forwarded-for'] || '').split(',')[0].trim();
+  const key = forwarded || String(req.headers?.['x-real-ip'] || 'anonymous');
+  const now = Date.now();
+  const current = barRateWindows.get(key);
+  const bucket = !current || now - current.startedAt >= windowMs
+    ? { startedAt: now, count: 0 }
+    : current;
+
+  bucket.count += 1;
+  barRateWindows.set(key, bucket);
+
+  if (barRateWindows.size > 500) {
+    for (const [entryKey, value] of barRateWindows) {
+      if (now - value.startedAt >= windowMs) barRateWindows.delete(entryKey);
+    }
+  }
+
+  if (bucket.count > limit) {
+    const error = new Error('Too many stock data requests. Please try again shortly.');
+    error.statusCode = 429;
+    throw error;
+  }
 }
 
 export function requireBatchToken(req) {
